@@ -40,6 +40,12 @@ class DetectionValidator(BaseValidator):
         self.iouv = torch.linspace(0.5, 0.95, 10)  # iou vector for mAP@0.5:0.95
         self.niou = self.iouv.numel()
         self.lb = []  # for autolabelling
+        self.min_iou = 1.0  # Инициализируйте минимальное значение IoU максимальным возможным значением
+        self.max_iou = 0.0  # Инициализируйте максимальное значение IoU нулем
+        self.min_iou_image = None  # Изображение с минимальным IoU
+        self.max_iou_image = None  # Изображение с максимальным IoU
+        self.min_iou_pred_boxes = predn[:, :4]
+        self.max_iou_pred_boxes = predn[:, :4]
 
     def preprocess(self, batch):
         """Preprocesses batch of images for YOLO training."""
@@ -132,11 +138,57 @@ class DetectionValidator(BaseValidator):
             if self.args.save_txt:
                 file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
+            # Предсказанные боксы в нативных координатах
+            pred_boxes = ops.xyxy2xywh(predn[:, :4])
+            ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
+            iou = box_iou(bbox, predn[:, :4])
+            iou_max = iou.max()  # Максимальное значение IoU для текущего батча
+            iou_min = iou.min() 
+           # Теперь после вычисления минимального и максимального IoU
+            if iou_min < self.min_iou:
+                self.min_iou = iou_min
+                self.min_iou_pred_boxes = pred_boxes.clone()
+                self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
+    
+            if iou_max > self.max_iou:
+                self.max_iou = iou_max
+                self.max_iou_pred_boxes = pred_boxes.clone()
+                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)    
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
+
+        import matplotlib.pyplot as plt        
+        # Отображение изображения с минимальным IoU и результатов детекции
+        if self.max_iou_image is not None:
+            plt.figure(figsize=(8, 8))
+            plt.imshow(self.min_iou_image)
+            plt.title(f"Min IoU: {self.min_iou:.2f}")
+            
+            # Отображение результатов детекции (прямоугольники боксов)
+            for bbox in self.min_iou_pred_boxes:
+                x1, y1, x2, y2, _ = bbox.tolist()
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
+        
+            plt.axis('off')
+            plt.show()
+        
+        # Аналогично для изображения с максимальным IoU
+        if self.max_iou_image is not None:
+            plt.figure(figsize=(8, 8))
+            plt.imshow(self.max_iou_image)
+            plt.title(f"Max IoU: {self.max_iou:.2f}")
+        
+            for bbox in self.min_iou_pred_boxes:
+                x1, y1, x2, y2, _ = bbox.tolist()
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
+        
+            plt.axis('off')
+            plt.show()
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
