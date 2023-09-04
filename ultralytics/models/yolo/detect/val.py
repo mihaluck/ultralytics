@@ -44,8 +44,8 @@ class DetectionValidator(BaseValidator):
         self.max_iou = 0.0  # Инициализируйте максимальное значение IoU нулем
         self.min_iou_image = None  # Изображение с минимальным IoU
         self.max_iou_image = None  # Изображение с максимальным IoU
-        self.min_iou_pred_boxes = predn[:, :4]
-        self.max_iou_pred_boxes = predn[:, :4]
+        self.min_iou_pred_boxes = None
+        self.max_iou_pred_boxes = None
 
     def preprocess(self, batch):
         """Preprocesses batch of images for YOLO training."""
