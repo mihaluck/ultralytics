@@ -188,6 +188,7 @@ class BaseValidator:
                 self.plot_predictions(batch, preds, batch_i)
 
             self.run_callbacks('on_val_batch_end')
+        self.finalize.metrics()
         stats = self.get_stats()
         self.check_stats(stats)
         self.speed = dict(zip(self.speed.keys(), (x.t / len(self.dataloader.dataset) * 1E3 for x in dt)))
@@ -267,12 +268,89 @@ class BaseValidator:
         pass
 
     def update_metrics(self, preds, batch):
-        """Updates metrics based on predictions and batch."""
-        pass
+        """Metrics."""
+        for si, pred in enumerate(preds):
+            idx = batch['batch_idx'] == si
+            cls = batch['cls'][idx]
+            bbox = batch['bboxes'][idx]
+            nl, npr = cls.shape[0], pred.shape[0]  # number of labels, predictions
+            shape = batch['ori_shape'][si]
+            correct_bboxes = torch.zeros(npr, self.niou, dtype=torch.bool, device=self.device)  # init
+            self.seen += 1
+
+            if npr == 0:
+                if nl:
+                    self.stats.append((correct_bboxes, *torch.zeros((2, 0), device=self.device), cls.squeeze(-1)))
+                    if self.args.plots:
+                        self.confusion_matrix.process_batch(detections=None, labels=cls.squeeze(-1))
+                continue
+
+            # Predictions
+            if self.args.single_cls:
+                pred[:, 5] = 0
+            predn = pred.clone()
+            ops.scale_boxes(batch['img'][si].shape[1:], predn[:, :4], shape,
+                            ratio_pad=batch['ratio_pad'][si])  # native-space pred
+
+            # Evaluate
+            if nl:
+                height, width = batch['img'].shape[2:]
+                tbox = ops.xywh2xyxy(bbox) * torch.tensor(
+                    (width, height, width, height), device=self.device)  # target boxes
+                ops.scale_boxes(batch['img'][si].shape[1:], tbox, shape,
+                                ratio_pad=batch['ratio_pad'][si])  # native-space labels
+                labelsn = torch.cat((cls, tbox), 1)  # native-space labels
+                correct_bboxes = self._process_batch(predn, labelsn)
+                # TODO: maybe remove these `self.` arguments as they already are member variable
+                if self.args.plots:
+                    self.confusion_matrix.process_batch(predn, labelsn)
+            self.stats.append((correct_bboxes, pred[:, 4], pred[:, 5], cls.squeeze(-1)))  # (conf, pcls, tcls)
+
+            # Save
+            if self.args.save_json:
+                self.pred_to_json(predn, batch['im_file'][si])
+            if self.args.save_txt:
+                file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
+                self.save_one_txt(predn, self.args.save_conf, shape, file)
+            # Предсказанные боксы в нативных координатах
+            pred_boxes = ops.xyxy2xywh(predn[:, :4])
+            ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
+            iou = box_iou(bbox, predn[:, :4])
+            iou_max = iou.max()  # Максимальное значение IoU для текущего батча
+            iou_min = iou.min() 
+           # Теперь после вычисления минимального и максимального IoU
+            if iou_min < self.min_iou:
+                self.min_iou = iou_min
+                self.min_iou_pred_boxes = pred_boxes.clone()
+                self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
+    
+            if iou_max > self.max_iou:
+                self.max_iou = iou_max
+                self.max_iou_pred_boxes = pred_boxes.clone()
+                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)    
 
     def finalize_metrics(self, *args, **kwargs):
-        """Finalizes and returns all metrics."""
-        pass
+        """Set final values for metrics speed and confusion matrix."""
+        self.metrics.speed = self.speed
+        self.metrics.confusion_matrix = self.confusion_matrix
+        
+        # Отображение изображения с минимальным IoU и результатов детекции        
+        from PIL import Image
+        import matplotlib.pyplot as plt        
+        if self.max_iou_image is not None:
+            plt.figure(figsize=(8, 8))
+            min_iou_image_pil = Image.fromarray(self.min_iou_image.numpy().astype('uint8'))
+            min_iou_image_pil.show()
+            plt.title(f"Min IoU: {self.min_iou:.2f}")
+            
+            # Отображение результатов детекции (прямоугольники боксов)
+            for bbox in self.min_iou_pred_boxes:
+                x1, y1, x2, y2, _ = bbox.tolist()
+                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
+        
+            plt.axis('off')
+            plt.show()
 
     def get_stats(self):
         """Returns statistics about the model's performance."""
