@@ -159,12 +159,14 @@ class DetectionValidator(BaseValidator):
         """Set final values for metrics speed and confusion matrix."""
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
-
+        
+        # Отображение изображения с минимальным IoU и результатов детекции        
+        from PIL import Image
         import matplotlib.pyplot as plt        
-        # Отображение изображения с минимальным IoU и результатов детекции
         if self.max_iou_image is not None:
             plt.figure(figsize=(8, 8))
-            plt.imshow(self.min_iou_image)
+            min_iou_image_pil = Image.fromarray(self.min_iou_image.numpy().astype('uint8'))
+            min_iou_image_pil.show()
             plt.title(f"Min IoU: {self.min_iou:.2f}")
             
             # Отображение результатов детекции (прямоугольники боксов)
@@ -179,7 +181,8 @@ class DetectionValidator(BaseValidator):
         # Аналогично для изображения с максимальным IoU
         if self.max_iou_image is not None:
             plt.figure(figsize=(8, 8))
-            plt.imshow(self.max_iou_image)
+            max_iou_image_pil = Image.fromarray(self.max_iou_image.numpy().astype('uint8'))
+            max_iou_image_pil.show()
             plt.title(f"Max IoU: {self.max_iou:.2f}")
         
             for bbox in self.min_iou_pred_boxes:
