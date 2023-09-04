@@ -350,7 +350,7 @@ class BaseValidator:
         
             plt.axis('off')
             plt.show()
-            plt.savefig("runs/detect/val2/min_iou.png")
+            plt.savefig("runs/detect/val/min_iou.png")
         # Аналогично для изображения с максимальным IoU
         if self.max_iou_image is not None:
             plt.figure(figsize=(8, 8))
@@ -364,7 +364,7 @@ class BaseValidator:
         
             plt.axis('off')
             plt.show()
-            plt.savefig("runs/detect/val2/max_iou.png")
+            plt.savefig("runs/detect/val/max_iou.png")
     def get_stats(self):
         """Returns statistics about the model's performance."""
         return {}
