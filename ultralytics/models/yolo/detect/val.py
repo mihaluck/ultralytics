@@ -163,10 +163,9 @@ class DetectionValidator(BaseValidator):
         # Отображение изображения с минимальным IoU и результатов детекции        
         from PIL import Image
         import matplotlib.pyplot as plt        
-        if self.max_iou_image is not None:
+        if self.min_iou_image is not None:
             plt.figure(figsize=(8, 8))
-            min_iou_image_pil = Image.fromarray(self.min_iou_image.numpy().astype('uint8'))
-            min_iou_image_pil.show()
+            plt.imshow(self.min_iou_image)
             plt.title(f"Min IoU: {self.min_iou:.2f}")
             
             # Отображение результатов детекции (прямоугольники боксов)
@@ -177,21 +176,21 @@ class DetectionValidator(BaseValidator):
         
             plt.axis('off')
             plt.show()
-        
+            plt.savefig("runs/detect/val/min_iou.png")
         # Аналогично для изображения с максимальным IoU
         if self.max_iou_image is not None:
             plt.figure(figsize=(8, 8))
-            max_iou_image_pil = Image.fromarray(self.max_iou_image.numpy().astype('uint8'))
-            max_iou_image_pil.show()
+            plt.imshow(self.max_iou_image)
             plt.title(f"Max IoU: {self.max_iou:.2f}")
         
-            for bbox in self.min_iou_pred_boxes:
+            for bbox in self.max_iou_pred_boxes:
                 x1, y1, x2, y2, _ = bbox.tolist()
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                 plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
         
             plt.axis('off')
             plt.show()
+            plt.savefig("runs/detect/val/max_iou.png")
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
