@@ -170,7 +170,7 @@ class DetectionValidator(BaseValidator):
             
             # Отображение результатов детекции (прямоугольники боксов)
             for bbox in self.min_iou_pred_boxes:
-                x1, y1, x2, y2, _ = bbox.tolist()
+                x1, y1, x2, y2 = bbox.tolist()
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                 plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
         
@@ -184,7 +184,7 @@ class DetectionValidator(BaseValidator):
             plt.title(f"Max IoU: {self.max_iou:.2f}")
         
             for bbox in self.max_iou_pred_boxes:
-                x1, y1, x2, y2, _ = bbox.tolist()
+                x1, y1, x2, y2 = bbox.tolist()
                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                 plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
         
