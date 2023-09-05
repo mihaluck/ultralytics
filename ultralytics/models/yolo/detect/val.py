@@ -166,10 +166,10 @@ class DetectionValidator(BaseValidator):
         self.metrics.confusion_matrix = self.confusion_matrix
         
         # Отображение изображения с минимальным IoU и результатов детекции        
-        if self.min_iou_image is not None:
+        if self.batch_min is not None:
             self.plot_predictions(self, self.batch_min, self.preds_min, self.si_min)
         # Аналогично для изображения с максимальным IoU
-        if self.max_iou_image is not None:
+        if self.batch_max is not None:
             self.plot_predictions(self, self.batch_max, self.preds_max, self.si_max)
 
     def get_stats(self):
