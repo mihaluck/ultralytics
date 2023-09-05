@@ -167,10 +167,10 @@ class DetectionValidator(BaseValidator):
         
         # Отображение изображения с минимальным IoU и результатов детекции        
         if self.batch_min is not None:
-            self.plot_predictions(self.batch_min, self.preds_min, self.si_min)
+            self.plot_predictions(self.batch_min, self.preds_min, "min_"+str(self.si_min))
         # Аналогично для изображения с максимальным IoU
         if self.batch_max is not None:
-            self.plot_predictions(self.batch_max, self.preds_max, self.si_max)
+            self.plot_predictions(self.batch_max, self.preds_max, "max_" + str(self.si_max))
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
