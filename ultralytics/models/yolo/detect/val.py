@@ -46,7 +46,13 @@ class DetectionValidator(BaseValidator):
         self.max_iou_image = None  # Изображение с максимальным IoU
         self.min_iou_pred_boxes = None
         self.max_iou_pred_boxes = None
-
+        self.batch_min = None
+        self.preds_min = None
+        self.si_min = None       
+        self.batch_max = None
+        self.preds_max = None
+        self.si_max = None   
+    
     def preprocess(self, batch):
         """Preprocesses batch of images for YOLO training."""
         batch['img'] = batch['img'].to(self.device, non_blocking=True)
@@ -138,22 +144,21 @@ class DetectionValidator(BaseValidator):
             if self.args.save_txt:
                 file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
-            # Предсказанные боксы в нативных координатах
-            pred_boxes = ops.xyxy2xywh(predn[:, :4])
-            ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
-            iou = box_iou(bbox, predn[:, :4])
-            iou_max = iou.max()  # Максимальное значение IoU для текущего батча
-            iou_min = iou.min() 
+
+            iou_max = self.iou.max()
+            iou_min = self.iou.min() 
            # Теперь после вычисления минимального и максимального IoU
             if iou_min < self.min_iou:
+                self.batch_min = batch
+                self.preds_min = preds
+                self.si_min = si       
                 self.min_iou = iou_min
-                self.min_iou_pred_boxes = pred_boxes.clone()
-                self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
     
             if iou_max > self.max_iou:
+                self.si_max = si
+                self.batch_max = batch
+                self.preds_max = preds              
                 self.max_iou = iou_max
-                self.max_iou_pred_boxes = pred_boxes.clone()
-                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)    
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
@@ -161,36 +166,11 @@ class DetectionValidator(BaseValidator):
         self.metrics.confusion_matrix = self.confusion_matrix
         
         # Отображение изображения с минимальным IoU и результатов детекции        
-        from PIL import Image
-        import matplotlib.pyplot as plt        
         if self.min_iou_image is not None:
-            plt.figure(figsize=(8, 8))
-            plt.imshow(self.min_iou_image)
-            plt.title(f"Min IoU: {self.min_iou:.2f}")
-            
-            # Отображение результатов детекции (прямоугольники боксов)
-            for bbox in self.min_iou_pred_boxes:
-                x1, y1, x2, y2 = bbox.tolist()
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
-        
-            plt.axis('off')
-            plt.show()
-            plt.savefig("runs/detect/val/min_iou.png")
+            self.plot_predictions(self, self.batch_min, self.preds_min, self.si_min)
         # Аналогично для изображения с максимальным IoU
         if self.max_iou_image is not None:
-            plt.figure(figsize=(8, 8))
-            plt.imshow(self.max_iou_image)
-            plt.title(f"Max IoU: {self.max_iou:.2f}")
-        
-            for bbox in self.max_iou_pred_boxes:
-                x1, y1, x2, y2 = bbox.tolist()
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
-        
-            plt.axis('off')
-            plt.show()
-            plt.savefig("runs/detect/val/max_iou.png")
+            self.plot_predictions(self, self.batch_max, self.preds_max, self.si_max)
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
@@ -233,7 +213,7 @@ class DetectionValidator(BaseValidator):
         Returns:
             (torch.Tensor): Correct prediction matrix of shape [N, 10] for 10 IoU levels.
         """
-        iou = box_iou(labels[:, 1:], detections[:, :4])
+        self.iou = box_iou(labels[:, 1:], detections[:, :4])
         return self.match_predictions(detections[:, 5], labels[:, 0], iou)
 
     def build_dataset(self, img_path, mode='val', batch=None):
