@@ -147,17 +147,22 @@ class DetectionValidator(BaseValidator):
 
             iou_max = self.iou.max()
             iou_min = self.iou.min() 
+            # Находим индекс максимального значения IoU
+            idx_max_iou = torch.argmax(self.iou)
+            # Находим индекс минимального значения IoU
+            idx_min_iou = torch.argmin(self.iou)
+            
            # Теперь после вычисления минимального и максимального IoU
             if iou_min < self.min_iou:
-                self.batch_min = batch
-                self.preds_min = preds
+                self.batch_min = batch['img'][si].unsqueeze(0)
+                self.preds_min = pred[idx_min_iou].unsqueeze(0)
                 self.si_min = si       
                 self.min_iou = iou_min
     
             if iou_max > self.max_iou:
                 self.si_max = si
-                self.batch_max = batch
-                self.preds_max = preds              
+                self.batch_max = batch['img'][si].unsqueeze(0)
+                self.preds_max = pred[idx_max_iou].unsqueeze(0)       
                 self.max_iou = iou_max
 
     def finalize_metrics(self, *args, **kwargs):
@@ -167,10 +172,10 @@ class DetectionValidator(BaseValidator):
         
         # Отображение изображения с минимальным IoU и результатов детекции        
         if self.batch_min is not None:
-            self.plot_predictions(self.batch_min, self.preds_min, "min_"+str(self.si_min))
+            self.plot_predictions(self.batch_min, self.preds_min, "_min_"+str(self.si_min))
         # Аналогично для изображения с максимальным IoU
         if self.batch_max is not None:
-            self.plot_predictions(self.batch_max, self.preds_max, "max_" + str(self.si_max))
+            self.plot_predictions(self.batch_max, self.preds_max, "_max_" + str(self.si_max))
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
