@@ -40,8 +40,8 @@ class DetectionValidator(BaseValidator):
         self.iouv = torch.linspace(0.5, 0.95, 10)  # iou vector for mAP@0.5:0.95
         self.niou = self.iouv.numel()
         self.lb = []  # for autolabelling
-        self.min_iou = 1.0  # Инициализируйте минимальное значение IoU максимальным возможным значением
-        self.max_iou = 0.0  # Инициализируйте максимальное значение IoU нулем
+        self.min_cur_iou = 1.0  # Инициализируйте минимальное значение IoU максимальным возможным значением
+        self.max_cur_iou = 0.0  # Инициализируйте максимальное значение IoU нулем
         self.min_iou_image = None  # Изображение с минимальным IoU
         self.max_iou_image = None  # Изображение с максимальным IoU
         self.min_iou_pred_boxes = None
@@ -145,15 +145,17 @@ class DetectionValidator(BaseValidator):
                 file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
 
-            if self.min_iou_idx:
+            if self.self.min_iou < self.min_cur_iou:
+                self.min_cur_iou = self.self.min_iou
                 self.batch_min = batch['img'][si].unsqueeze(0)
-                self.preds_min = pred[self.min_iou_idx].unsqueeze(0)
+                self.preds_min = predn[self.min_iou_idx].unsqueeze(0)
                 self.si_min = si       
     
-            if self.max_iou_idx:
+            if self.self.max_iou > self.max_cur_iou:
+                self.max_cur_iou = self.self.max_iou
                 self.si_max = si
                 self.batch_max = batch['img'][si].unsqueeze(0)
-                self.preds_max = pred[self.max_iou_idx].unsqueeze(0)       
+                self.preds_max = predn[self.max_iou_idx].unsqueeze(0)       
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
