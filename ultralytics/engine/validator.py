@@ -95,6 +95,8 @@ class BaseValidator:
         self.max_iou = 0.0
         self.min_iou_idx = None
         self.max_iou_idx = None
+        self.iou = None
+        self.matches = None    
         
         self.save_dir = save_dir or get_save_dir(self.args)
         (self.save_dir / 'labels' if self.args.save_txt else self.save_dir).mkdir(parents=True, exist_ok=True)
@@ -258,12 +260,16 @@ class BaseValidator:
                     if i == 0:  # При первой итерации (порог IoU = 0.5)
                         for match in matches:
                             iou_value = iou[match[0], match[1]]
-                            if iou_value < self.min_iou and iou_value != 0:
+                            if iou_value < self.min_iou:
                                 self.min_iou = iou_value
-                                srlf.min_iou_idx = match[0]
+                                self.min_iou_idx = match[0]
+                                self.iou = iou
+                                self.matches = matches
                             if iou_value > self.max_iou:
                                 self.max_iou = iou_value
                                 self.max_iou_idx = match[0]
+                                self.iou = iou
+                                self.matches = matches
     
                     correct[matches[:, 1].astype(int), i] = True    
                     
