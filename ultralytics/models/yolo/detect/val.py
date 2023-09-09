@@ -145,25 +145,15 @@ class DetectionValidator(BaseValidator):
                 file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
 
-            iou_max = self.iou.max()
-            iou_min = self.iou.min() 
-            # Находим индекс максимального значения IoU
-            idx_max_iou = torch.argmax(self.iou)
-            # Находим индекс минимального значения IoU
-            idx_min_iou = torch.argmin(self.iou)
-            
-           # Теперь после вычисления минимального и максимального IoU
-            if iou_min < self.min_iou:
+            if self.min_iou_idx:
                 self.batch_min = batch['img'][si].unsqueeze(0)
-                self.preds_min = pred[idx_min_iou].unsqueeze(0)
+                self.preds_min = pred[self.min_iou_idx].unsqueeze(0)
                 self.si_min = si       
-                self.min_iou = iou_min
     
-            if iou_max > self.max_iou:
+            if self.max_iou_idx:
                 self.si_max = si
                 self.batch_max = batch['img'][si].unsqueeze(0)
-                self.preds_max = pred[idx_max_iou].unsqueeze(0)       
-                self.max_iou = iou_max
+                self.preds_max = pred[self.max_iou_idx].unsqueeze(0)       
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
@@ -218,8 +208,7 @@ class DetectionValidator(BaseValidator):
         Returns:
             (torch.Tensor): Correct prediction matrix of shape [N, 10] for 10 IoU levels.
         """
-        self.iou = box_iou(labels[:, 1:], detections[:, :4])
-        return self.match_predictions(detections[:, 5], labels[:, 0], self.iou)
+        return self.match_predictions(detections[:, 5], labels[:, 0], iou)
 
     def build_dataset(self, img_path, mode='val', batch=None):
         """
