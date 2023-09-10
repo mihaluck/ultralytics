@@ -97,6 +97,8 @@ class BaseValidator:
         self.max_iou_idx = None
         self.iou = None
         self.matches = None    
+        self.flag_min = False
+        self.flag_max = False
         
         self.save_dir = save_dir or get_save_dir(self.args)
         (self.save_dir / 'labels' if self.args.save_txt else self.save_dir).mkdir(parents=True, exist_ok=True)
@@ -348,6 +350,14 @@ class BaseValidator:
             pred_boxes = ops.xyxy2xywh(predn[:, :4])
             ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
             iou = box_iou(bbox, predn[:, :4])  
+           # Теперь после вычисления минимального и максимального IoU
+            if self.flag_min:
+                self.min_iou_pred_boxes = pred_boxes.clone()
+                self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
+
+            if self.flag_max:
+                self.max_iou_pred_boxes = pred_boxes.clone()
+                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)              
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
