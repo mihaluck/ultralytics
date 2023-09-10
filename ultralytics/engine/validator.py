@@ -379,10 +379,10 @@ class BaseValidator:
         
         # Отображение изображения с минимальным IoU и результатов детекции        
         if self.batch_min is not None:
-            self.plot_predictions(self.batch_min, self.preds_min, iou = self.min_iou_values)
+            self.plot_predictions(self.batch_min, self.preds_min, self.si_min, iou = self.min_iou_values)
         # Аналогично для изображения с максимальным IoU
         if self.batch_max is not None:
-            self.plot_predictions(self.batch_max, self.preds_max, iou = self.max_iou_values)
+            self.plot_predictions(self.batch_max, self.preds_max, self.si_max, iou = self.max_iou_values)
             
     def get_stats(self):
         """Returns statistics about the model's performance."""
