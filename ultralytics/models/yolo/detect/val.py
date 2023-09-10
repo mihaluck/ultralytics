@@ -164,10 +164,10 @@ class DetectionValidator(BaseValidator):
         
         # Отображение изображения с минимальным IoU и результатов детекции        
         if self.batch_min is not None:
-            self.plot_predictions(self.batch_min, self.preds_min, "_min_"+str(self.si_min))
+            self.plot_predictions(self.batch_min, self.preds_min, iou = self.min_iou_values)
         # Аналогично для изображения с максимальным IoU
         if self.batch_max is not None:
-            self.plot_predictions(self.batch_max, self.preds_max, "_max_" + str(self.si_max))
+            self.plot_predictions(self.batch_max, self.preds_max, iou = self.max_iou_values)
 
     def get_stats(self):
         """Returns metrics statistics and results dictionary."""
@@ -241,13 +241,14 @@ class DetectionValidator(BaseValidator):
                     names=self.names,
                     on_plot=self.on_plot)
 
-    def plot_predictions(self, batch, preds, ni):
+    def plot_predictions(self, batch, preds, ni, iou = None):
         """Plots predicted bounding boxes on input images and saves the result."""
         plot_images(batch,
                     *output_to_target(preds, max_det=self.args.max_det),
                     fname=self.save_dir / f'val_batch{ni}_pred.jpg',
                     names=self.names,
-                    on_plot=self.on_plot)  # pred
+                    on_plot=self.on_plot,
+                    iou)  # pred
 
     def save_one_txt(self, predn, save_conf, shape, file):
         """Save YOLO detections to a txt file in normalized coordinates in a specific format."""
