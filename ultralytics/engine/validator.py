@@ -347,19 +347,7 @@ class BaseValidator:
             # Предсказанные боксы в нативных координатах
             pred_boxes = ops.xyxy2xywh(predn[:, :4])
             ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
-            iou = box_iou(bbox, predn[:, :4])
-            iou_max = iou.max()  # Максимальное значение IoU для текущего батча
-            iou_min = iou.min() 
-           # Теперь после вычисления минимального и максимального IoU
-            if iou_min < self.min_iou:
-                self.min_iou = iou_min
-                self.min_iou_pred_boxes = pred_boxes.clone()
-                self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
-    
-            if iou_max > self.max_iou:
-                self.max_iou = iou_max
-                self.max_iou_pred_boxes = pred_boxes.clone()
-                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)    
+            iou = box_iou(bbox, predn[:, :4])  
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
@@ -367,36 +355,12 @@ class BaseValidator:
         self.metrics.confusion_matrix = self.confusion_matrix
         
         # Отображение изображения с минимальным IoU и результатов детекции        
-        from PIL import Image
-        import matplotlib.pyplot as plt        
-        if self.min_iou_image is not None:
-            plt.figure(figsize=(8, 8))
-            plt.imshow(self.min_iou_image)
-            plt.title(f"Min IoU: {self.min_iou:.2f}")
-            
-            # Отображение результатов детекции (прямоугольники боксов)
-            for bbox in self.min_iou_pred_boxes:
-                x1, y1, x2, y2, _ = bbox.tolist()
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
-        
-            plt.axis('off')
-            plt.show()
-            plt.savefig("runs/detect/val/min_iou.png")
+        if self.batch_min is not None:
+            self.plot_predictions(self.batch_min, self.preds_min, iou = self.min_iou_values)
         # Аналогично для изображения с максимальным IoU
-        if self.max_iou_image is not None:
-            plt.figure(figsize=(8, 8))
-            plt.imshow(self.max_iou_image)
-            plt.title(f"Max IoU: {self.max_iou:.2f}")
-        
-            for bbox in self.max_iou_pred_boxes:
-                x1, y1, x2, y2, _ = bbox.tolist()
-                x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
-                plt.gca().add_patch(plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=False, color='red', linewidth=2))
-        
-            plt.axis('off')
-            plt.show()
-            plt.savefig("runs/detect/val/max_iou.png")
+        if self.batch_max is not None:
+            self.plot_predictions(self.batch_max, self.preds_max, iou = self.max_iou_values)
+            
     def get_stats(self):
         """Returns statistics about the model's performance."""
         return {}
