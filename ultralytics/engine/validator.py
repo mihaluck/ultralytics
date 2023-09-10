@@ -260,16 +260,11 @@ class BaseValidator:
                     if i == 0:  # При первой итерации (порог IoU = 0.5)
                         for match in matches:
                             iou_value = iou[match[0], match[1]]
-                            if iou_value < self.min_iou:
-                                self.min_iou = iou_value
-                                self.min_iou_idx = match[0]
-                                self.iou = iou
-                                self.matches = matches
-                            if iou_value > self.max_iou:
-                                self.max_iou = iou_value
-                                self.max_iou_idx = match[0]
-                                self.iou = iou
-                                self.matches = matches
+                            if iou_value == self.min_iou:
+                                self.min_iou_values = [iou[match[0], match[1]] for match in matches]
+                            if iou_value == self.max_iou:
+                                self.max_iou_values = [iou[match[0], match[1]] for match in matches]
+
     
                     correct[matches[:, 1].astype(int), i] = True    
                     
