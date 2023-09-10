@@ -373,7 +373,8 @@ def plot_images(images,
                 paths=None,
                 fname='images.jpg',
                 names=None,
-                on_plot=None):
+                on_plot=None,
+                iou=None):
     """Plot image grid with labels."""
     if isinstance(images, torch.Tensor):
         images = images.cpu().float().numpy()
@@ -418,6 +419,8 @@ def plot_images(images,
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
+        if iou:
+            annotator.text((x + 5, y + 5), text=str(iou[i]), txt_color=(220, 220, 220))  # filenames
         if paths:
             annotator.text((x + 5, y + 5), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(cls) > 0:
