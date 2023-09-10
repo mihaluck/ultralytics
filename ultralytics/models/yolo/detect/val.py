@@ -247,7 +247,7 @@ class DetectionValidator(BaseValidator):
                     *output_to_target(preds, max_det=self.args.max_det),
                     fname=self.save_dir / f'val_batch{ni}_pred.jpg',
                     names=self.names,
-                    iou,
+                    iou=iou,
                     on_plot=self.on_plot,
                     )  # pred
 
