@@ -260,11 +260,17 @@ class BaseValidator:
                     correct[matches[:, 1].astype(int), i] = True
                 # Проверка минимального и максимального IoU
                     if i == 0:  # При первой итерации (порог IoU = 0.5)
+                        self.flag_min = 0
+                        self.flag_max = 0
                         for match in matches:
                             iou_value = iou[match[0], match[1]]
-                            if iou_value == self.min_iou:
+                            if iou_value < self.min_iou:
+                                self.flag_min = 1
+                                self.min_iou = iou_value
                                 self.min_iou_values = [iou[match[0], match[1]] for match in matches]
-                            if iou_value == self.max_iou:
+                            if iou_value > self.max_iou:
+                                self.flag_max = 1
+                                self.max_iou = iou_value
                                 self.max_iou_values = [iou[match[0], match[1]] for match in matches]
 
     
@@ -351,13 +357,20 @@ class BaseValidator:
             ops.scale_boxes(batch['img'][si].shape[1:], pred_boxes, shape, ratio_pad=batch['ratio_pad'][si])            
             iou = box_iou(bbox, predn[:, :4])  
            # Теперь после вычисления минимального и максимального IoU
-            if self.flag_min:
+
+            self.flag_min = False
+            self.flag_max = False            
+            if iou_min < self.min_iou:
+                self.flag_min = True
+                self.min_iou = iou_min
                 self.min_iou_pred_boxes = pred_boxes.clone()
                 self.min_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)
 
-            if self.flag_max:
+            if iou_max > self.max_iou:
+                self.flag_max = True
+                self.max_iou = iou_max
                 self.max_iou_pred_boxes = pred_boxes.clone()
-                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)              
+                self.max_iou_image = batch['img'][si].clone().cpu().squeeze().permute(1, 2, 0)             
 
     def finalize_metrics(self, *args, **kwargs):
         """Set final values for metrics speed and confusion matrix."""
