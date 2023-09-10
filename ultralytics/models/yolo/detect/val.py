@@ -144,14 +144,17 @@ class DetectionValidator(BaseValidator):
             if self.args.save_txt:
                 file = self.save_dir / 'labels' / f'{Path(batch["im_file"][si]).stem}.txt'
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
-
+            self.flag_min = 0
+            self.flag_max = 0
             if self.min_iou < self.min_cur_iou:
+                self.flag_min = 1
                 self.min_cur_iou = self.min_iou
                 self.batch_min = batch['img'][si].unsqueeze(0)
                 self.preds_min = pred.unsqueeze(0)
                 self.si_min = si       
     
             if self.max_iou > self.max_cur_iou:
+                self.flag_max = 1
                 self.max_cur_iou = self.max_iou
                 self.si_max = si
                 self.batch_max = batch['img'][si].unsqueeze(0)
