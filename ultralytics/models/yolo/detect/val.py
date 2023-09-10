@@ -247,8 +247,9 @@ class DetectionValidator(BaseValidator):
                     *output_to_target(preds, max_det=self.args.max_det),
                     fname=self.save_dir / f'val_batch{ni}_pred.jpg',
                     names=self.names,
+                    iou,
                     on_plot=self.on_plot,
-                    iou)  # pred
+                    )  # pred
 
     def save_one_txt(self, predn, save_conf, shape, file):
         """Save YOLO detections to a txt file in normalized coordinates in a specific format."""
