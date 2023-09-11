@@ -419,8 +419,6 @@ def plot_images(images,
     for i in range(i + 1):
         x, y = int(w * (i // ns)), int(h * (i % ns))  # block origin
         annotator.rectangle([x, y, x + w, y + h], None, (255, 255, 255), width=2)  # borders
-        if iou:
-            annotator.text((x + 5, y + 5), text=str(iou[i]), txt_color=(220, 220, 220))  # filenames
         if paths:
             annotator.text((x + 5, y + 5), text=Path(paths[i]).name[:40], txt_color=(220, 220, 220))  # filenames
         if len(cls) > 0:
@@ -443,10 +441,11 @@ def plot_images(images,
                 for j, box in enumerate(boxes.T.tolist()):
                     c = classes[j]
                     color = colors(c)
+                    iou = iou
                     c = names.get(c, c) if names else c
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
                         label = f'{c}' if labels else f'{c} {conf[j]:.1f}'
-                        annotator.box_label(box, label, color=color)
+                        annotator.box_label(box, label, iou, color=color)
             elif len(classes):
                 for c in classes:
                     color = colors(c)
