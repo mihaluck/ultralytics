@@ -146,7 +146,7 @@ class DetectionValidator(BaseValidator):
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
                 
             if self.flag_min:
-                self.batch_min = batch['si'][idx].unsqueeze(0)
+                self.batch_min = batch['img'][si].unsqueeze(0)
                 self.preds_min = pred.unsqueeze(0)
                 self.si_min = si       
     
