@@ -146,13 +146,13 @@ class DetectionValidator(BaseValidator):
                 self.save_one_txt(predn, self.args.save_conf, shape, file)
                 
             if self.flag_min:
-                self.batch_min = batch['img'][si].unsqueeze(0)
+                self.batch_min = batch['img'][idx].unsqueeze(0)
                 self.preds_min = pred.unsqueeze(0)
-                self.si_min = si       
+                self.si_min = idx       
     
             if self.flag_max:
-                self.si_max = si
-                self.batch_max = batch['img'][si].unsqueeze(0)
+                self.si_max = idx
+                self.batch_max = batch['img'][idx].unsqueeze(0)
                 self.preds_max = pred.unsqueeze(0)       
 
     def finalize_metrics(self, *args, **kwargs):
