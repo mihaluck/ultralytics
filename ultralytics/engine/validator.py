@@ -238,6 +238,8 @@ class BaseValidator:
         correct_class = true_classes[:, None] == pred_classes
         iou = iou * correct_class  # zero out the wrong classes
         iou = iou.cpu().numpy()
+        ln = len(pred_classes)
+        lk = len(true_classes)
         for i, threshold in enumerate(self.iouv.cpu().tolist()):
             if use_scipy:
                 # WARNING: known issue that reduces mAP in https://github.com/ultralytics/ultralytics/pull/4708
@@ -263,15 +265,19 @@ class BaseValidator:
                         self.flag_min = 0
                         self.flag_max = 0
                         for match in matches:
-                            iou_value = iou[match[0], match[1]]
+                            iou_value = iou[match[0], match[1]]                            
                             if iou_value < self.min_iou:
                                 self.flag_min = 1
                                 self.min_iou = iou_value
-                                self.min_iou_values = [iou[match[0], match[1]] for match in matches]
+                                self.min_iou_values = [0]*ln
+                                for match in matches:
+                                    self.min_iou_values[match[0]] = iou[match[0], match[1]]
                             if iou_value > self.max_iou:
                                 self.flag_max = 1
                                 self.max_iou = iou_value
-                                self.max_iou_values = [iou[match[0], match[1]] for match in matches]
+                                self.max_iou_values = [0]*ln
+                                for match in matches:
+                                    self.max_iou_values[match[0]] = iou[match[0], match[1]]                       
 
     
                     correct[matches[:, 1].astype(int), i] = True    
