@@ -247,7 +247,7 @@ class DetectionValidator(BaseValidator):
                     names=self.names,
                     iou=iou,
                     min_iou = None,
-                    max_iou = None
+                    max_iou = None,
                     on_plot=self.on_plot,
                     )  # pred
 
