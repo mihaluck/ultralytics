@@ -440,8 +440,6 @@ def plot_images(images,
                         boxes *= scale
                 boxes[[0, 2]] += x
                 boxes[[1, 3]] += y
-                print(len(boxes.T.tolist()))
-                print(len(iou))
                 for j, box in enumerate(boxes.T.tolist()):
                     c = classes[j]
                     color = colors(c)
