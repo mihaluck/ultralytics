@@ -382,7 +382,8 @@ class BaseValidator:
         """Set final values for metrics speed and confusion matrix."""
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
-        
+        print(self.preds_min, self.min_iou_values)
+        print(self.preds_max, self.max_iou_values)        
         # Отображение изображения с минимальным IoU и результатов детекции        
         if self.batch_min is not None:
             self.plot_predictions(self.batch_min, self.preds_min, str(self.si_min)+"_min_iou", iou = self.min_iou_values, min_iou = self.min_iou, max_iou = self.max_iou)
