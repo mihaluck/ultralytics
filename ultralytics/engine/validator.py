@@ -238,8 +238,8 @@ class BaseValidator:
         correct_class = true_classes[:, None] == pred_classes
         iou = iou * correct_class  # zero out the wrong classes
         iou = iou.cpu().numpy()
-        lk = len(pred_classes)
-        ln = len(true_classes)
+        ln = len(pred_classes)
+        lk = len(true_classes)
         for i, threshold in enumerate(self.iouv.cpu().tolist()):
             if use_scipy:
                 # WARNING: known issue that reduces mAP in https://github.com/ultralytics/ultralytics/pull/4708
