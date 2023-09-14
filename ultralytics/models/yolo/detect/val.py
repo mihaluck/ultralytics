@@ -246,8 +246,8 @@ class DetectionValidator(BaseValidator):
                     fname=self.save_dir / f'val_batch{ni}_pred.jpg',
                     names=self.names,
                     iou=iou,
-                    min_iou = None,
-                    max_iou = None,
+                    min_iou = min_iou,
+                    max_iou = max_iou,
                     on_plot=self.on_plot,
                     )  # pred
 
