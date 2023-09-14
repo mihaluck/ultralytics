@@ -271,13 +271,13 @@ class BaseValidator:
                                 self.min_iou = iou_value
                                 self.min_iou_values = [0]*ln
                                 for match in matches:
-                                    self.min_iou_values[match[0]] = iou[match[0], match[1]]
+                                    self.min_iou_values[match[0]] = max(self.min_iou_values[match[0]], iou[match[0], match[1]])
                             if iou_value > self.max_iou:
                                 self.flag_max = 1
                                 self.max_iou = iou_value
                                 self.max_iou_values = [0]*ln
                                 for match in matches:
-                                    self.max_iou_values[match[0]] = iou[match[0], match[1]]                       
+                                    self.max_iou_values[match[0]] = max(iou[match[0], match[1]], self.max_iou_values[match[0]])
 
     
                     correct[matches[:, 1].astype(int), i] = True    
