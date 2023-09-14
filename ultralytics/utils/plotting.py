@@ -447,7 +447,7 @@ def plot_images(images,
                     c = names.get(c, c) if names else c
                     if labels or conf[j] > 0.25:  # 0.25 conf thresh
                         label = f'{c}' if labels else f'{c} {conf[j]:.1f}'
-                        annotator.box_label(box, label+iou_j, color=color)
+                        annotator.box_label(box, label+iou_j+str(min_iou)+str(max_iou), color=color)
             elif len(classes):
                 for c in classes:
                     color = colors(c)
